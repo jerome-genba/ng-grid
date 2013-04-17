@@ -11,6 +11,7 @@
     self.minWidth = !colDef.minWidth ? 50 : colDef.minWidth;
     self.maxWidth = !colDef.maxWidth ? 9000 : colDef.maxWidth;
 	self.enableCellEdit = config.enableCellEdit || colDef.enableCellEdit;
+    self.isCellContentEditable = ($utils.isNullOrUndefined(colDef.isCellContentEditable)) ? false : colDef.isCellContentEditable;
     self.headerRowHeight = config.headerRowHeight;
     self.displayName = colDef.displayName || colDef.field;
     self.index = config.index;
@@ -43,8 +44,13 @@
     self.headerCellTemplate = colDef.headerCellTemplate || $templateCache.get('headerCellTemplate.html');
     self.cellTemplate = colDef.cellTemplate || $templateCache.get('cellTemplate.html').replace(CUSTOM_FILTERS, self.cellFilter ? "|" + self.cellFilter : "");
 	if(self.enableCellEdit) {
-	    self.cellEditTemplate = $templateCache.get('cellEditTemplate.html');
-	    self.editableCellTemplate = colDef.editableCellTemplate || $templateCache.get('editableCellTemplate.html');
+        if (self.isCellContentEditable) {
+           self.cellTemplate = colDef.cellTemplate || $templateCache.get('cellContentEditableTemplate.html').replace(CUSTOM_FILTERS, self.cellFilter ? "|" + self.cellFilter : "");
+           self.editableCellTemplate = $templateCache.get('contentEditableCellTemplate.html'); 
+        } else {
+	       self.cellEditTemplate = $templateCache.get('cellEditTemplate.html');
+	       self.editableCellTemplate = colDef.editableCellTemplate || $templateCache.get('editableCellTemplate.html');
+        }
 	}
     if (colDef.cellTemplate && !TEMPLATE_REGEXP.test(colDef.cellTemplate)) {
         self.cellTemplate = $.ajax({

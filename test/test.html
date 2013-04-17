@@ -1,0 +1,21 @@
+<!doctype html>
+<html ng-app="gridTest">
+  <head lang="en">
+    <title>Grid Test Page</title>
+    <link rel="stylesheet" type="text/css" href="../ng-grid.css" />
+    <style type="text/css">
+    	.gridStyle {
+		    border: 1px solid rgb(212,212,212);
+		    width: 400px; 
+		    height: 300px;
+		}
+    </style>
+    <script src="../lib/jquery-1.9.1.js"></script>
+    <script src="../lib/angular.js"></script>
+    <script src="../build/ng-grid.debug.js"></script>
+    <script src="app.js"></script>
+  </head>
+  <body ng-controller="GridController">
+  	<div class="gridStyle" ng-grid="gridOptions"></div>
+  </body>
+</html>

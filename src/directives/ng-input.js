@@ -3,9 +3,9 @@
         var getter = $parse($scope.$eval(attrs.ngInput));
 		var setter = getter.assign;
 		var oldCellValue = getter($scope.row.entity);
-		elm.val(oldCellValue);
+		(elm.is("input")) ? elm.val(oldCellValue) : elm.html(oldCellValue);
         elm.bind('keyup', function() {
-            var newVal = elm.val();
+            var newVal = (elm.is("input")) ? elm.val() : elm.html();
             if (!$scope.$root.$$phase) {
                 $scope.$apply(function(){setter($scope.row.entity,newVal); });
             }
@@ -22,7 +22,7 @@
 					if (!$scope.$root.$$phase) {
 						$scope.$apply(function(){
 							setter($scope.row.entity,oldCellValue);
-							elm.val(oldCellValue);
+							(elm.is("input")) ? elm.val(oldCellValue) : elm.html(oldCellValue);
 							elm.blur();
 						});
 					}
@@ -31,5 +31,9 @@
 			}
 			return true;
 		});
+      
+	    elm.bind('focus', function() {
+			oldCellValue = getter($scope.row.entity);
+	    });
     };
 }]);

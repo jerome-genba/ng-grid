@@ -2,7 +2,7 @@
 * ng-grid JavaScript Library
 * Authors: https://github.com/angular-ui/ng-grid/blob/master/README.md 
 * License: MIT (http://www.opensource.org/licenses/mit-license.php)
-* Compiled At: 04/10/2013 18:25
+* Compiled At: 04/17/2013 18:34
 ***********************************************/
 (function(window, $) {
 'use strict';
@@ -61,7 +61,7 @@ var ngMoveSelectionHandler = function($scope, elm, evt, grid) {
         var focusedOnLastColumn = visibleCols.indexOf($scope.col) == (visibleCols.length - 1);
         var focusedOnLastPinnedColumn = pinnedCols.indexOf($scope.col) == (pinnedCols.length - 1);
         
-        if (charCode == 37 || charCode == 9 && evt.shiftKey) {
+        if (charCode == 37 || charCode == 9 && evt.shiftKey) { // % or shift+tab
             var scrollTo = 0;
             if (!focusedOnFirstColumn) {
                 newColumnIndex -= 1;
@@ -79,7 +79,7 @@ var ngMoveSelectionHandler = function($scope, elm, evt, grid) {
 			}
             grid.$viewport.scrollLeft(scrollTo);
 			
-		} else if(charCode == 39 || charCode ==  9 && !evt.shiftKey){
+		} else if(charCode == 39 || charCode ==  9 && !evt.shiftKey){ // ' or tab
             if (focusedOnLastVisibleColumns) {
 				if(focusedOnLastColumn && charCode ==  9 && !evt.shiftKey){
 					grid.$viewport.scrollLeft(0);
@@ -673,6 +673,7 @@ var ngColumn = function (config, $scope, grid, domUtilityService, $templateCache
     self.minWidth = !colDef.minWidth ? 50 : colDef.minWidth;
     self.maxWidth = !colDef.maxWidth ? 9000 : colDef.maxWidth;
 	self.enableCellEdit = config.enableCellEdit || colDef.enableCellEdit;
+    self.isCellContentEditable = ($utils.isNullOrUndefined(colDef.isCellContentEditable)) ? false : colDef.isCellContentEditable;
     self.headerRowHeight = config.headerRowHeight;
     self.displayName = colDef.displayName || colDef.field;
     self.index = config.index;
@@ -705,8 +706,13 @@ var ngColumn = function (config, $scope, grid, domUtilityService, $templateCache
     self.headerCellTemplate = colDef.headerCellTemplate || $templateCache.get('headerCellTemplate.html');
     self.cellTemplate = colDef.cellTemplate || $templateCache.get('cellTemplate.html').replace(CUSTOM_FILTERS, self.cellFilter ? "|" + self.cellFilter : "");
 	if(self.enableCellEdit) {
-	    self.cellEditTemplate = $templateCache.get('cellEditTemplate.html');
-	    self.editableCellTemplate = colDef.editableCellTemplate || $templateCache.get('editableCellTemplate.html');
+        if (self.isCellContentEditable) {
+           self.cellTemplate = colDef.cellTemplate || $templateCache.get('cellContentEditableTemplate.html').replace(CUSTOM_FILTERS, self.cellFilter ? "|" + self.cellFilter : "");
+           self.editableCellTemplate = $templateCache.get('contentEditableCellTemplate.html'); 
+        } else {
+	       self.cellEditTemplate = $templateCache.get('cellEditTemplate.html');
+	       self.editableCellTemplate = colDef.editableCellTemplate || $templateCache.get('editableCellTemplate.html');
+        }
 	}
     if (colDef.cellTemplate && !TEMPLATE_REGEXP.test(colDef.cellTemplate)) {
         self.cellTemplate = $.ajax({
@@ -2738,8 +2744,12 @@ ngGridDirectives.directive('ngCell', ['$compile', '$domUtilityService', function
                     var html;
                     var cellTemplate = $scope.col.cellTemplate.replace(COL_FIELD, '$eval(\'row.entity.\' + col.field)');
 					if($scope.col.enableCellEdit){
-						html =  $scope.col.cellEditTemplate;
-						html = html.replace(DISPLAY_CELL_TEMPLATE, cellTemplate);
+						if ($scope.col.isCellContentEditable) {
+							html = cellTemplate;
+						} else {
+							html =  $scope.col.cellEditTemplate;
+							html = html.replace(DISPLAY_CELL_TEMPLATE, cellTemplate);
+						}
 						html = html.replace(EDITABLE_CELL_TEMPLATE, $scope.col.editableCellTemplate.replace(COL_FIELD, "col.field"));
 					} else {
 					    html = cellTemplate;
@@ -2999,9 +3009,9 @@ ngGridDirectives.directive('ngInput',['$parse', function($parse) {
         var getter = $parse($scope.$eval(attrs.ngInput));
 		var setter = getter.assign;
 		var oldCellValue = getter($scope.row.entity);
-		elm.val(oldCellValue);
+		(elm.is("input")) ? elm.val(oldCellValue) : elm.html(oldCellValue);
         elm.bind('keyup', function() {
-            var newVal = elm.val();
+            var newVal = (elm.is("input")) ? elm.val() : elm.html();
             if (!$scope.$root.$$phase) {
                 $scope.$apply(function(){setter($scope.row.entity,newVal); });
             }
@@ -3018,7 +3028,7 @@ ngGridDirectives.directive('ngInput',['$parse', function($parse) {
 					if (!$scope.$root.$$phase) {
 						$scope.$apply(function(){
 							setter($scope.row.entity,oldCellValue);
-							elm.val(oldCellValue);
+							(elm.is("input")) ? elm.val(oldCellValue) : elm.html(oldCellValue);
 							elm.blur();
 						});
 					}
@@ -3027,6 +3037,10 @@ ngGridDirectives.directive('ngInput',['$parse', function($parse) {
 			}
 			return true;
 		});
+      
+	    elm.bind('focus', function() {
+			oldCellValue = getter($scope.row.entity);
+	    });
     };
 }]);
 ngGridDirectives.directive('ngRow', ['$compile', '$domUtilityService', '$templateCache', function ($compile, domUtilityService, $templateCache) {
@@ -3186,6 +3200,14 @@ angular.module("ngGrid").run(["$templateCache", function($templateCache) {
     ""
   );
 
+  $templateCache.put("cellContentEditableTemplate.html",
+    "<div ng-cell-has-focus ng-click=\"editCell()\">" +
+    "	<div>" +
+    "		<div class=\"ngCellText\" ng-class=\"col.colIndex()\"><span ng-cell-text EDITABLE_CELL_TEMPLATE>{{COL_FIELD CUSTOM_FILTERS}}</span></div>" +
+    "	</div>" +
+    "</div>"
+  );
+
   $templateCache.put("cellEditTemplate.html",
     "<div ng-cell-has-focus ng-dblclick=\"editCell()\">" +
     "	<div ng-if=\"!isFocused\">" +
@@ -3207,6 +3229,10 @@ angular.module("ngGrid").run(["$templateCache", function($templateCache) {
 
   $templateCache.put("checkboxHeaderTemplate.html",
     "<input class=\"ngSelectionHeader\" type=\"checkbox\" ng-show=\"multiSelect\" ng-model=\"allSelected\" ng-change=\"toggleSelectAll(allSelected)\"/>"
+  );
+
+  $templateCache.put("contentEditableCellTemplate.html",
+    "ng-input=\"COL_FIELD\" contenteditable=\"true\""
   );
 
   $templateCache.put("editableCellTemplate.html",

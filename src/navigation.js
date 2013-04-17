@@ -28,7 +28,7 @@ var ngMoveSelectionHandler = function($scope, elm, evt, grid) {
         var focusedOnLastColumn = visibleCols.indexOf($scope.col) == (visibleCols.length - 1);
         var focusedOnLastPinnedColumn = pinnedCols.indexOf($scope.col) == (pinnedCols.length - 1);
         
-        if (charCode == 37 || charCode == 9 && evt.shiftKey) {
+        if (charCode == 37 || charCode == 9 && evt.shiftKey) { // % or shift+tab
             var scrollTo = 0;
             if (!focusedOnFirstColumn) {
                 newColumnIndex -= 1;
@@ -46,7 +46,7 @@ var ngMoveSelectionHandler = function($scope, elm, evt, grid) {
 			}
             grid.$viewport.scrollLeft(scrollTo);
 			
-		} else if(charCode == 39 || charCode ==  9 && !evt.shiftKey){
+		} else if(charCode == 39 || charCode ==  9 && !evt.shiftKey){ // ' or tab
             if (focusedOnLastVisibleColumns) {
 				if(focusedOnLastColumn && charCode ==  9 && !evt.shiftKey){
 					grid.$viewport.scrollLeft(0);
